@@ -1,0 +1,46 @@
+{% extends 'main_app/foot.html' %}
+{% load static %}
+
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-dark">
+                    <div class="card-header">
+                        <h3 class="card-title">{{ page_title }}</h3>
+                    </div>
+                    <table class="table">
+                        <thead>
+                          <tr>
+                            <th scope="col">Tên</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Giới tính</th>
+                            <th scope="col">Địa chỉ</th>
+                            <th scope="col">Khóa học</th>
+                            <th scope="col">Mã số sinh viên</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {% for student in students %}
+                            <tr>
+                                <td>{{ student.profile.first_name }} {{ student.profile.last_name }}</td>
+                                <td>{{ student.profile.email }}</td>
+                                <td>{{ student.profile.gender }}</td>
+                                <td>{{ student.profile.address }}</td>
+                                <td>{{ student.subject.name }}</td>
+                                <td>{{ student.s_code }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">Không có thông tin sinh viên nào.</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                      </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}

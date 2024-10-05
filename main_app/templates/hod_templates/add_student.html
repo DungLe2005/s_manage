@@ -1,0 +1,57 @@
+{% extends "main_app/foot.html" %}
+{%load static%}
+{% block content %}
+
+    <section class="content form-padding">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" style='color: black;'>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        <div class="container-fluid form-padding">
+            <div class="row">
+                <div class="col-md-12">
+                    <!-- general form elements -->
+                    <div class="card card-dark">
+                        <div class="card-header form-padding">
+                            <h3 class="card-title">{{page_title}}</h3>
+                        </div>
+    
+                        {% include "main_app/form_template.html" with messages=messages  form=form button_text="Thêm học sinh"%}
+                    </div>
+                    <!-- /.card -->
+                    
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock content %}
+<script>
+    function submitForm(event) {
+        event.preventDefault();  // Ngăn chặn hành động mặc định của form (trang không bị reload)
+        
+        const formData = new FormData(document.getElementById('studentForm'));  // Lấy dữ liệu từ form
+    
+        fetch('/add_student/', {
+            method: 'POST',  // Gửi yêu cầu POST
+            body: formData,  // Dữ liệu form
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')  // Đính kèm CSRF token cho bảo mật
+            }
+        })
+        .then(response => response.json())  // Chuyển đổi phản hồi thành JSON
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message);  // Hiển thị thông báo thành công
+            } else {
+                alert(data.message);  // Hiển thị thông báo lỗi
+                if (data.errors) {
+                    console.log(data.errors);  // In chi tiết lỗi ra console để kiểm tra
+                }
+            }
+        })
+        .catch(error => console.error('Error:', error));  // Bắt lỗi và in ra console
+    }
+</script>

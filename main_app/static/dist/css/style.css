@@ -1,0 +1,43 @@
+.sidebar-custom {
+    position: fixed;
+    top: 0; /* Đặt sát mép trên trang */
+    left: 0;
+    height: 100%; /* Sidebar chiếm toàn bộ chiều cao */
+    z-index: 1050; /* Giá trị z-index cao hơn để đè lên header */
+    width: 250px; /* Chiều rộng sidebar */
+}
+
+.content {
+    margin-left: 250px; /* Để tránh nội dung chính bị đè bởi sidebar */
+    color: black;
+}
+
+.header-custom{
+    padding-left: 250px;
+    margin-left: 50px;
+    background-color: dimgrey;
+}
+
+.title{
+    padding-left: 0;
+    margin-left: 0;
+    color: aqua;
+}
+
+.control-panel{
+    background-color: rgba(255, 241, 224, 0.264);
+    height: 200px !important;
+    width: 255px !important;
+    margin-left: -15px;
+}
+
+.cp-padding{
+    padding-top: 50px;
+}
+
+.item-padding{
+    padding-bottom: 20px;
+}
+.form-padding{
+    margin-right:250px !important;
+}

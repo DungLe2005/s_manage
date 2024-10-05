@@ -1,0 +1,36 @@
+{%load static%}
+<form role="form" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="card-body">
+  
+      {% for field in form %}
+        <div class="form-group">
+          {{ field.errors }}
+          {% if field.label == 'Start year' %}
+            <label for="{{ field.id_for_label }}">Thời gian bắt đầu</label>
+          {% elif field.label == 'End year' %}
+            <label for="{{ field.id_for_label }}">Thời gian kết thúc</label>
+          {% elif field.label == 'Name' %}
+            <label for="{{ field.id_for_label }}">Tên môn học</label>
+          {% elif field.label == 'Staff' %}
+            <label for="{{ field.id_for_label }}">Chọn nhân viên</label>
+          {% elif field.label == 'Course' %}
+            <label for="{{ field.id_for_label }}">Chọn khóa học</label>
+          {% elif field.label == 'Subject' %}
+            <label for="{{ field.id_for_label }}">Chọn môn học</label>
+          {% else %}
+            {{ field.label_tag }}
+          {% endif %}
+          {{ field }}
+        </div>
+      {% endfor %}
+    </div>
+    <!-- /.card-body -->
+  
+    <div class="card-footer">
+      <button type="submit" class="btn btn-success btn-block">
+          Xác nhận
+      </button>
+    </div>
+  </form>
+  
