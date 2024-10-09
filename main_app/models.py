@@ -33,7 +33,7 @@ class CustomUser(AbstractUser):
     username = None
     user_type = models.CharField(default=1, choices=USER_TYPE, max_length=1)
     password = models.CharField(max_length=128, default='default_password')
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, default=None)
     gender = models.CharField(max_length=1, choices=GENDER)
     profile_pic = models.ImageField(null=False, blank=False, default= 'images\avatar-trang-4.jpg' )
     address = models.TextField()
@@ -59,7 +59,7 @@ class Admin(models.Model):
     admin = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
 
 class Subject(models.Model):
-    name = models.CharField(max_length=120)
+    name = models.CharField(max_length=120, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -67,17 +67,20 @@ class Subject(models.Model):
         return self.name
 
 class Student(models.Model):
-    profile = models.OneToOneField(CustomUser,on_delete=models.CASCADE)
+    profile = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     s_code = models.CharField(max_length=200, null= True, blank=True)
-    
+
     def __str__(self):
-        return self.profile.first_name + " " + self.profile.last_name
-    
+        return self.profile.last_name + "  " + self.profile.first_name
+
 
 class Staff(models.Model):
     profile = models.OneToOneField(CustomUser,on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return self.profile.first_name + " " + self.profile.last_name
     
 class Grade(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
@@ -86,13 +89,6 @@ class Grade(models.Model):
     exam_type = models.CharField(max_length=100)
     score = models.DecimalField(max_digits=5, decimal_places=2)
     date = models.DateField(auto_now_add=True)
-    remarks = models.TextField(null=True, blank=True)
-    status = models.CharField(
-        max_length=50, 
-        choices=[('confirmed', 'Đã xác nhận'), ('pending', 'Chưa xác nhận')],
-        default='pending'
-    )
-
     def __str__(self):
         return f"{self.student} - {self.subject} - {self.score}"
     

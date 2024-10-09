@@ -10,8 +10,8 @@
                         <ul class="list-group">
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <h3 class="card-title">{{ page_title }}</h3>
-                                <a href ="{%url 'add_student' %}" target="top">
-                                    <h3 class="badge bg-primary rounded-pill">Thêm sinh viên</h3>
+                                <a href ="{% url 'add_course' %}" target="top">
+                                    <h3 class="badge bg-primary rounded-pill">Thêm khóa học</h3>
                                 </a>
                             </li>
                         </ul>
@@ -20,30 +20,24 @@
                         <thead>
                           <tr>
                             <th scope="col">Tên</th>
-                            <th scope="col">Email</th>
-                            <th scope="col">Giới tính</th>
-                            <th scope="col">Khóa học</th>
-                            <th scope="col">Mã số sinh viên</th>
-                            <th scope="col">Hành động</th>
+                            <th scope="col">Ngày tạo</th>
+                            <th scope="col">Hành động</th> 
                           </tr>
                         </thead>
                         <tbody>
-                        {% for student in students %}
+                        {% for subject in subjects %}
                             <tr>
-                                <td>{{ student.profile.first_name }} {{ student.profile.last_name }}</td>
-                                <td>{{ student.profile.email }}</td>
-                                <td>{{ student.profile.gender }}</td>
-                                <td>{{ student.subject.name }}</td>
-                                <td>{{ student.s_code }}</td>
+                                <td>{{ subject.name }}</td>
+                                <td>{{ subject.created_at }}</td>
                                 <td>
-                                    <a href="#" class="btn btn-warning btn-sm">Sửa</a>
-                                    <a href="#" class="btn btn-danger btn-sm" 
+                                    <a href="{% url 'edit_subject' subject.id %}" class="btn btn-warning btn-sm">Sửa</a>
+                                    <a href="{% url 'delete_subject' subject.id %}" class="btn btn-danger btn-sm" 
                                        onclick="return confirm('Bạn có chắc chắn muốn xóa không?');">Xóa</a>
                                 </td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">Không có thông tin sinh viên nào.</td>
+                                <td colspan="6" class="text-center">Không có thông tin môn học nào.</td>
                             </tr>
                         {% endfor %}
                         </tbody>

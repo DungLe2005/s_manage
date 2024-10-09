@@ -1,10 +1,21 @@
+html, body {
+    height: 100% !important; /* Đảm bảo trang chiếm toàn bộ chiều cao */
+    margin: 0 !important; /* Xóa margin mặc định để không gây ảnh hưởng */
+}
+
+
 .sidebar-custom {
-    position: fixed;
+    position: fixed !important;
     top: 0; /* Đặt sát mép trên trang */
     left: 0;
     height: 100%; /* Sidebar chiếm toàn bộ chiều cao */
     z-index: 1050; /* Giá trị z-index cao hơn để đè lên header */
     width: 250px; /* Chiều rộng sidebar */
+   
+}
+
+.overflow_hidden{
+    overflow: hidden !important;
 }
 
 .content {
@@ -39,5 +50,5 @@
     padding-bottom: 20px;
 }
 .form-padding{
-    margin-right:250px !important;
+    margin-right:200px !important;
 }

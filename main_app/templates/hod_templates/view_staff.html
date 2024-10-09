@@ -10,8 +10,8 @@
                         <ul class="list-group">
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <h3 class="card-title">{{ page_title }}</h3>
-                                <a href ="{%url 'add_student' %}" target="top">
-                                    <h3 class="badge bg-primary rounded-pill">Thêm sinh viên</h3>
+                                <a href ="{%url 'add_staff' %}" target="top">
+                                    <h3 class="badge bg-primary rounded-pill">Thêm nhân viên</h3>
                                 </a>
                             </li>
                         </ul>
@@ -22,24 +22,18 @@
                             <th scope="col">Tên</th>
                             <th scope="col">Email</th>
                             <th scope="col">Giới tính</th>
-                            <th scope="col">Khóa học</th>
-                            <th scope="col">Mã số sinh viên</th>
-                            <th scope="col">Hành động</th>
+                            <th scope="col">Địa chỉ</th>
+                            <th scope="col">Giáo viên môn</th>
                           </tr>
                         </thead>
                         <tbody>
-                        {% for student in students %}
+                        {% for staff in staffs %}
                             <tr>
-                                <td>{{ student.profile.first_name }} {{ student.profile.last_name }}</td>
-                                <td>{{ student.profile.email }}</td>
-                                <td>{{ student.profile.gender }}</td>
-                                <td>{{ student.subject.name }}</td>
-                                <td>{{ student.s_code }}</td>
-                                <td>
-                                    <a href="#" class="btn btn-warning btn-sm">Sửa</a>
-                                    <a href="#" class="btn btn-danger btn-sm" 
-                                       onclick="return confirm('Bạn có chắc chắn muốn xóa không?');">Xóa</a>
-                                </td>
+                                <td>{{ staff.profile.first_name }} {{ staff.profile.last_name }}</td>
+                                <td>{{ staff.profile.email }}</td>
+                                <td>{{ staff.profile.gender }}</td>
+                                <td>{{ staff.profile.address }}</td>
+                                <td>{{ staff.subject.name }}</td>
                             </tr>
                         {% empty %}
                             <tr>

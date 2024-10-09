@@ -1,52 +1,47 @@
-<div class="row">
-  <!-- Sidebar --> 
-  <nav class="col-md-3 nav-pills flex-column flex-sm-row bg-light sidebar-custom">
-    <div class="control-panel">
-      <h1 class="brand-text font-weight-light text-center cp-padding">Bảng điều khiển</h1>
-    </div>
-    <div class="position-sticky ">
-      <ul class="nav flex-column">
-        <li class="nav-item item-padding">
-          <a class="flex-sm-fill nav-link text-center" href="{% url 'home' %}">
-            <h5>Trang chủ</h5>
-          </a>
-        </li>
-        <li class="nav-item item-padding">
-          <a class="flex-sm-fill nav-link text-center" href= "{%url 'add_student' %}">
-            <h5>Thêm sinh viên</h5>
-          </a>
-        </li>
-        <li class="nav-item item-padding">
-          <a class="flex-sm-fill nav-link text-center" href="{%url 'view_student' %}">
-            <h5>Xem chi tiết</h5>
-          </a>
-        </li>
-        <li class="nav-item item-padding">
-          <a class="flex-sm-fill nav-link text-center" href="{%url 'add_course' %}">
-            <h5>Thêm khóa học</h5>
-          </a>
-        </li>
-        <li class="nav-item item-padding">
-          <a class="flex-sm-fill nav-link text-center"href="#">
-            <h5>Quản lí khóa học</h5>
-          </a>
-        </li>
-        <li class="nav-item item-padding">
-          <a class="flex-sm-fill nav-link text-center" href="#">
-            <h5>Thêm điểm</h5>
-          </a>
-        </li>
-        <li class="nav-item item-padding">
-          <a class="flex-sm-fill nav-link text-center" href="#">
-            <h5>Xem điểm</h5>
-          </a>
-        </li>
-        <li class="nav-item item-padding">
-          <a class="flex-sm-fill nav-link text-center" href="#">
-            <h5>Đăng xuất</h5>
-          </a>
-        </li>
-      </ul>
-    </div>
-  </nav>
-</div>
+<div class="row overflow_hidden">
+    <!-- Sidebar --> 
+    <nav class="col-md-3 nav-pills flex-column  bg-light sidebar-custom">
+      <div class="control-panel">
+        <h1 class="brand-text font-weight-light text-center cp-padding">Bảng điều khiển</h1>
+      </div>
+      <div class="position-sticky ">
+        <ul class="nav flex-column">
+          <li class="nav-item item-padding">
+            <a class="flex-sm-fill nav-link text-center" href="{% url 'home' %}">
+              <h5>Trang chủ</h5>
+            </a>
+          </li>
+          <li class="nav-item item-padding">
+            <a class="flex-sm-fill nav-link text-center" href="{%url 'view_student' %}">
+              <h5>Quản lí sinh viên</h5>
+            </a>
+          </li>
+          <li class="nav-item item-padding">
+            <a class="flex-sm-fill nav-link text-center"href="{%url 'view_staff' %}">
+              <h5>Quản lí nhân viên</h5>
+            </a>
+          </li>
+          <li class="nav-item item-padding">
+            <a class="flex-sm-fill nav-link text-center"href="{%url 'view_subject' %}">
+              <h5>Quản lí khóa học</h5>
+            </a>
+          </li>
+          <li class="nav-item item-padding">
+            <a class="flex-sm-fill nav-link text-center" href="{%url 'add_grade' %}">
+              <h5>Thêm điểm</h5>
+            </a>
+          </li>
+          <li class="nav-item item-padding">
+            <a class="flex-sm-fill nav-link text-center" href="{%url 'view_grade' %}">
+              <h5>Xem điểm</h5>
+            </a>
+          </li>
+          <li class="nav-item item-padding">
+            <a class="flex-sm-fill nav-link text-center" href="{%url 'login' %}">
+              <h5>Đăng xuất</h5>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </div>

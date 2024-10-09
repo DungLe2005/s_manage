@@ -1,17 +1,16 @@
 {% extends "main_app/foot.html" %}
 {%load static%}
-{% block content %} 
+{% block content %}
         <div class="container-fluid form-padding">
             <div class="row">
-                <div class="d-flex justify-content-center" style="margin-top: 100px;">
+                <div class="col-md-12">
                     <!-- general form elements -->
                     <div class="card card-dark">
-                        <div class="card-header  w-100 h-100">
+                        <div class="card-header col-12">
                             <h3 class="card-title">{{page_title}}</h3>
                         </div>
-
     
-                        {% include "main_app/form_template.html" with messages=messages  form=form button_text="Thêm khóa học"%}
+                        {% include "main_app/form_template.html" with messages=messages  form=form button_text="Thêm điểm"%}
                     </div>
                     <!-- /.card -->
     

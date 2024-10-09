@@ -1,0 +1,37 @@
+{% extends 'main_app/foot.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-dark">
+                    <div class="card-header">
+                        <h3 class="card-title">{{ page_title }}</h3>
+                    </div>
+                    <table class="table">
+                        <thead>
+                          <tr>
+                            <th scope="col">Tên</th>
+                            <th scope="col">Môn</th>
+                            <th scope="col">Bài thi</th>
+                            <th scope="col">Điểm</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {% for grade in grades %}
+                            <tr>
+                                <td>{{ grade.student }} </td>    
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">Không có thông tin sinh viên nào.</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                      </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

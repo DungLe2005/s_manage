@@ -1,5 +1,4 @@
 from django import forms
-from django.forms.widgets import DateInput, TextInput
 
 from .models import *
 
@@ -48,7 +47,7 @@ class CustomUserForm(FormSettings):
                     raise forms.ValidationError("Email đã được đăng ký")
 
         return formEmail
-
+    
     class Meta:
         model = CustomUser
         fields = ['first_name', 'last_name','email', 'gender', 'password', 'profile_pic', 'address']
@@ -60,10 +59,18 @@ class StudentForm(CustomUserForm):
     class Meta(CustomUserForm.Meta):
         model = Student
         fields = CustomUserForm.Meta.fields + ['subject', 's_code']
-        
-class CourseForm(FormSettings):
+
+class StaffForm(CustomUserForm):
     def __init__(self, *args, **kwargs):
-        super(CourseForm, self).__init__(*args, **kwargs)
+        super(StaffForm, self).__init__(*args, **kwargs)
+
+    class Meta(CustomUserForm.Meta):
+        model = Staff
+        fields = CustomUserForm.Meta.fields + ['subject']
+        
+class SubjectForm(FormSettings):
+    def __init__(self, *args, **kwargs):
+        super(SubjectForm, self).__init__(*args, **kwargs)
 
     class Meta:
         fields = ['name']
@@ -76,7 +83,21 @@ class AdminForm(CustomUserForm):
     class Meta(CustomUserForm.Meta):
         model = Admin
         fields = CustomUserForm.Meta.fields
+
+class GradeForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(GradeForm, self).__init__(*args, **kwargs)
+    class Meta:
+        model = Grade
+        fields = ['student', 'teacher', 'subject', 'exam_type', 'score',]
         
+class LoginForm(forms.Form):
+    email = forms.EmailField(label="Email", widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}))
+    password = forms.CharField(label="Mật khẩu", widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Mật khẩu'}))
+
+    class Meta:
+        fields = ['email', 'password']
+
 class StudentEditForm(CustomUserForm):
     def __init__(self, *args, **kwargs):
         super(StudentEditForm, self).__init__(*args, **kwargs)
@@ -84,3 +105,4 @@ class StudentEditForm(CustomUserForm):
     class Meta(CustomUserForm.Meta):
         model = Student
         fields = CustomUserForm.Meta.fields
+        
