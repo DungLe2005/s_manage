@@ -1,6 +1,7 @@
 html, body {
     height: 100% !important; /* Đảm bảo trang chiếm toàn bộ chiều cao */
     margin: 0 !important; /* Xóa margin mặc định để không gây ảnh hưởng */
+    overflow: hidden; /* Tắt thanh cuộn toàn trang */
 }
 
 
@@ -8,10 +9,21 @@ html, body {
     position: fixed !important;
     top: 0; /* Đặt sát mép trên trang */
     left: 0;
-    height: 100%; /* Sidebar chiếm toàn bộ chiều cao */
+    height: 100vh !important; /* Chiều cao của navbar bằng toàn trang */
     z-index: 1050; /* Giá trị z-index cao hơn để đè lên header */
     width: 250px; /* Chiều rộng sidebar */
-   
+    overflow-y:auto !important; /* Cho phép thanh cuộn dọc trong navbar */
+    background-color: #f8f9fa !important; /* Màu nền cho sidebar */
+
+}
+
+.main-content {
+    flex: 1;
+    overflow-y: 510px; /* Thanh cuộn cho nội dung chính */
+    overflow-x: hidden;
+    height: 90vh; /* Chiều cao toàn trang */
+    width: 1200px;
+    background-color: #f4f4f4;
 }
 
 .overflow_hidden{
@@ -19,8 +31,10 @@ html, body {
 }
 
 .content {
-    margin-left: 250px; /* Để tránh nội dung chính bị đè bởi sidebar */
+    margin-left: 250px !important; /* Để tránh nội dung chính bị đè bởi sidebar */
     color: black;
+    padding: 20px;
+    
 }
 
 .header-custom{
@@ -51,4 +65,23 @@ html, body {
 }
 .form-padding{
     margin-right:200px !important;
+}
+
+.loader {
+    width: fit-content;
+    font-weight: bold;
+    font-family: sans-serif;
+    font-size: 30px;
+    padding-bottom: 8px;
+    background: linear-gradient(currentColor 0 0) 0 100%/0% 3px no-repeat;
+    animation: l2 2s linear infinite;
+  }
+  .loader:before {
+    content:"Loading..."
+  }
+  @keyframes l2 {to{background-size: 100% 3px}}
+
+    select.form-control option:checked {
+    background-color: #007bff; /* Màu nền cho các mục đã chọn */
+    color: white; /* Màu chữ cho các mục đã chọn*/
 }

@@ -1,0 +1,49 @@
+{% extends 'main_app/foot.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-dark">
+                    <div class="card-header">
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <h3 class="card-title">{{ page_title }}</h3>
+                                <a href ="{% url 'add_studysection' %}">
+                                    <h3 class="badge bg-primary rounded-pill">Thêm học phần</h3>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    {% for registration in registrations %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Mã Học Phần</th>
+                                <th>Tên Học Phần</th>
+                                <th>Kỳ Học</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for registration in registrations %}
+                                {% for section in registration.study_section.all %}  {# Lặp qua tất cả các học phần trong đăng ký #}
+                                    <tr>
+                                        <td>{{ section.code }}</td>
+                                        <td>{{ section.name }}</td>                                       
+                                        <td>{{ registration.semester }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4">Không có học phần nào đã đăng ký.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                      </table>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

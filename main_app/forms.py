@@ -14,7 +14,6 @@ class CustomUserForm(FormSettings):
     first_name = forms.CharField(required=True, label="Họ")
     last_name = forms.CharField(required=True, label="tên")
     email = forms.EmailField(required=True, label="Email")
-    # subject = forms.CharField(required=True)
     gender = forms.ChoiceField(choices=[('M', 'Nam'), ('F', 'Nữ')], label="Giới tính")
     address = forms.CharField(widget=forms.Textarea, label="Địa chỉ")
     password = forms.CharField(widget=forms.PasswordInput, label="Mật khẩu")
@@ -58,38 +57,75 @@ class StudentForm(CustomUserForm):
 
     class Meta(CustomUserForm.Meta):
         model = Student
-        fields = CustomUserForm.Meta.fields + ['subject', 's_code']
+        fields = CustomUserForm.Meta.fields + ['birth_day', 'code', 'classroom']
+    birth_day = forms.DateTimeField( required=True, label='Ngày sinh')
+    code =  forms.CharField(required=True, label="Mã số sinh viên")
+    classroom = forms.ModelChoiceField(queryset=ClassRoom.objects.all(), required=True, label="Lớp")  # Trường chọn Lớp
 
-class StaffForm(CustomUserForm):
+class DepartmentForm(FormSettings):
     def __init__(self, *args, **kwargs):
-        super(StaffForm, self).__init__(*args, **kwargs)
+        super(DepartmentForm, self).__init__(*args, **kwargs)
 
+    name = forms.CharField(required=True, label="Tên Khoa")
+    code = forms.CharField(required=True, label="Mã khoa")
+    class Meta:
+        model = Department
+        fields = ['name', 'code']
+
+class LecturerForm(CustomUserForm):
+    def __init__(self, *args, **kwargs):
+        super(LecturerForm, self).__init__(*args, **kwargs)
+    department = forms.ModelChoiceField(queryset=Department.objects.all(), required=True, label="Khoa")  # Trường chọn Khoa
+    study_section = forms.ModelChoiceField(queryset=Study_Section.objects.all(), required=True, label="Mon")  # Trường chọn Khoa
     class Meta(CustomUserForm.Meta):
-        model = Staff
-        fields = CustomUserForm.Meta.fields + ['subject']
+        model = Lecturer
+        fields = CustomUserForm.Meta.fields + ['department', 'study_section']
         
 class SubjectForm(FormSettings):
     def __init__(self, *args, **kwargs):
         super(SubjectForm, self).__init__(*args, **kwargs)
 
     class Meta:
-        fields = ['name']
+        fields = ['name','code','credit_number']
         model = Subject
+    name = forms.CharField(required=True, label="Tên môn học")
+    code = forms.CharField(required=True, label="Mã môn học")
+    credit_number = forms.IntegerField( required=True, label="Số tính chỉ")
 
-class AdminForm(CustomUserForm):
+class StudySectionForm(FormSettings):
     def __init__(self, *args, **kwargs):
-        super(AdminForm, self).__init__(*args, **kwargs)
-
-    class Meta(CustomUserForm.Meta):
-        model = Admin
-        fields = CustomUserForm.Meta.fields
-
-class GradeForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super(GradeForm, self).__init__(*args, **kwargs)
+        super(StudySectionForm, self).__init__(*args, **kwargs)
     class Meta:
-        model = Grade
-        fields = ['student', 'teacher', 'subject', 'exam_type', 'score',]
+        fields = ['name','code','year','subject']
+        model = Subject
+    name = forms.CharField(required=True, label="Tên học phần")
+    code = forms.CharField(required=True, label="Mã học phần")
+    year = forms.IntegerField(required=True, label="Năm học")
+    subject= forms.ModelChoiceField(queryset=Subject.objects.all(), required=True, label="Thuộc môn học")  # Trường chọn môn học
+
+class RegisterForm(forms.ModelForm):
+    study_sections = forms.ModelMultipleChoiceField(
+        queryset=Study_Section.objects.filter(),
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),  # Thêm class cho checkbox
+        required=True,
+        label="Chọn học phần"
+    )
+    
+    class Meta:
+        model = Register
+        fields = ['study_sections', 'semester']
+
+    
+        
+class ClassRoomForm(FormSettings):
+    def __init__(self, *args, **kwargs):
+        super(ClassRoomForm, self).__init__(*args, **kwargs)
+    class Meta:
+        model = ClassRoom
+        fields = ['name', 'code', 'department']
+    name = forms.CharField(required=True, label="Tên lớp học")
+    code = forms.CharField(required=True, label="Mã lớp học")
+    department = forms.ModelChoiceField(queryset=Department.objects.all(), required=True, label="Thuộc khoa")
         
 class LoginForm(forms.Form):
     email = forms.EmailField(label="Email", widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}))
@@ -98,11 +134,47 @@ class LoginForm(forms.Form):
     class Meta:
         fields = ['email', 'password']
 
-class StudentEditForm(CustomUserForm):
-    def __init__(self, *args, **kwargs):
-        super(StudentEditForm, self).__init__(*args, **kwargs)
+class EditStudentForm(forms.ModelForm):
+    birth_day = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        input_formats=['%d/%m/%Y', '%Y-%m-%d'], 
+        required=True
+    )    
+    code =  forms.CharField(required=True, label="Mã số sinh viên")
+    classroom = forms.ModelChoiceField(queryset=ClassRoom.objects.all(), required=True, label="Lớp")  # Trường chọn Lớp
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'gender', 'password', 'address', 'profile_pic', 'email', 'birth_day', 'code', 'classroom']  # Các field mà bạn muốn chỉnh sửa
 
-    class Meta(CustomUserForm.Meta):
-        model = Student
-        fields = CustomUserForm.Meta.fields
+    def save(self, commit=True):
+        user = super(EditStudentForm, self).save(commit=False)
         
+        current_email = self.instance.email  # Lấy email hiện tại
+        if current_email != user.email:
+            if CustomUser.objects.filter(email=user.email).exists():
+                raise forms.ValidationError("Email đã tồn tại. Vui lòng sử dụng email khác.")
+        
+        if commit:
+            user.save()
+        return user
+
+class EditLecturerForm(forms.ModelForm):
+    department = forms.ModelChoiceField(queryset=Department.objects.all(), required=True, label="Khoa")
+    study_section = forms.ModelChoiceField(queryset=Study_Section.objects.all(), required=True, label="Mon")  # Trường chọn Khoa
+
+    class Meta:
+        model = Lecturer
+        fields =['department','study_section']  # Các field mà bạn muốn chỉnh sửa
+
+    
+class GradeForm(FormSettings):
+    def __init__(self, *args, **kwargs):
+        super(GradeForm, self).__init__(*args, **kwargs)
+    
+    class Meta():
+        model = Grade
+        fields = ['homework_score', 'midterm_score', 'final_score']
+    homework_score = forms.DecimalField(required=True,label='Điểm bài tập'),
+    midterm_score = forms.DecimalField(required=True,label='Điểm giữa kì'),
+    final_score = forms.DecimalField(required=True,label='Điểm cuối kì'),
+    

@@ -10,8 +10,8 @@
                         <ul class="list-group">
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <h3 class="card-title">{{ page_title }}</h3>
-                                <a href ="{% url 'add_course' %}" target="top">
-                                    <h3 class="badge bg-primary rounded-pill">Thêm khóa học</h3>
+                                <a href ="{% url 'add_subject' %}">
+                                    <h3 class="badge bg-primary rounded-pill">Thêm môn học</h3>
                                 </a>
                             </li>
                         </ul>
@@ -20,6 +20,8 @@
                         <thead>
                           <tr>
                             <th scope="col">Tên</th>
+                            <th scope="col">Mã môn học</th>
+                            <th scope="col">Số tính chỉ</th>
                             <th scope="col">Ngày tạo</th>
                             <th scope="col">Hành động</th> 
                           </tr>
@@ -28,6 +30,8 @@
                         {% for subject in subjects %}
                             <tr>
                                 <td>{{ subject.name }}</td>
+                                <td>{{ subject.code }}</td>
+                                <td>{{ subject.credit_number }}</td>
                                 <td>{{ subject.created_at }}</td>
                                 <td>
                                     <a href="{% url 'edit_subject' subject.id %}" class="btn btn-warning btn-sm">Sửa</a>

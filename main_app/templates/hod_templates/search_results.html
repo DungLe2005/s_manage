@@ -1,0 +1,38 @@
+{% extends "main_app/foot.html" %}
+{%load static%}
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Kết quả tìm kiếm cho "<strong>{{ query }}</strong>"</h1>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h2 class="h4">Sinh viên:</h2>
+            <ul class="list-group">
+                {% for student in students %}
+                    <li class="list-group-item">
+                        {{ student.profile.first_name }} {{ student.profile.last_name }} - 
+                        <strong>Mã sinh viên:</strong> {{ student.s_code }}
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">Không tìm thấy sinh viên.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="col-md-6">
+            <h2 class="h4">Giáo viên:</h2>
+            <ul class="list-group">
+                {% for teacher in teachers %}
+                    <li class="list-group-item">
+                        {{ teacher.profile.first_name }} {{ teacher.profile.last_name }} - 
+                        <strong>Giáo viên môn:</strong> {{ teacher.subject }}
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">Không tìm thấy giáo viên.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+</div>
+{% endblock content %}

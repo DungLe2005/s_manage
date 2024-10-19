@@ -1,3 +1,4 @@
+{% load static %}
 <div class="row overflow_hidden">
     <!-- Sidebar --> 
     <nav class="col-md-3 nav-pills flex-column  bg-light sidebar-custom">
@@ -12,36 +13,63 @@
             </a>
           </li>
           <li class="nav-item item-padding">
+            <a class="flex-sm-fill nav-link text-center" href="{%url 'view_department' %}">
+              <h5>Quản lí các Khoa</h5>
+            </a>
+          </li>
+          <li class="nav-item item-padding">
+            <a class="flex-sm-fill nav-link text-center" href="{%url 'view_class' %}">
+              <h5>Quản lí lớp học</h5>
+            </a>
+          </li>
+          <li class="nav-item item-padding">
             <a class="flex-sm-fill nav-link text-center" href="{%url 'view_student' %}">
               <h5>Quản lí sinh viên</h5>
             </a>
           </li>
           <li class="nav-item item-padding">
-            <a class="flex-sm-fill nav-link text-center"href="{%url 'view_staff' %}">
-              <h5>Quản lí nhân viên</h5>
+            <a class="flex-sm-fill nav-link text-center"href="{%url 'view_lecturer' %}">
+              <h5>Quản lí giảng viên</h5>
             </a>
           </li>
           <li class="nav-item item-padding">
             <a class="flex-sm-fill nav-link text-center"href="{%url 'view_subject' %}">
-              <h5>Quản lí khóa học</h5>
+              <h5>Quản lí môn học</h5>
+            </a>
+          </li>
+           <li class="nav-item item-padding">
+            <a class="flex-sm-fill nav-link text-center"href="{%url 'view_studysection' %}">
+              <h5>Quản lí học phần</h5>
             </a>
           </li>
           <li class="nav-item item-padding">
-            <a class="flex-sm-fill nav-link text-center" href="{%url 'add_grade' %}">
+            <a class="flex-sm-fill nav-link text-center"href="#">
+              <h5>Xem các học phần đã đăng kí</h5>
+            </a>
+          </li>
+          <li class="nav-item item-padding">
+            <a class="flex-sm-fill nav-link text-center" href="#">
               <h5>Thêm điểm</h5>
             </a>
           </li>
-          <li class="nav-item item-padding">
+           <li class="nav-item item-padding">
             <a class="flex-sm-fill nav-link text-center" href="{%url 'view_grade' %}">
               <h5>Xem điểm</h5>
             </a>
           </li>
-          <li class="nav-item item-padding">
+          {% if user.is_authenticated %}
+            <li class="nav-item">
+              <a class="flex-sm-fill nav-link text-center" href="{%url 'logout' %}">
+                <h5>Đăng xuất</h5>
+              </a>
+            </li> 
+          {% else %}
+          <li class="nav-item">
             <a class="flex-sm-fill nav-link text-center" href="{%url 'login' %}">
-              <h5>Đăng xuất</h5>
+              <h5>Đăng nhập</h5>
             </a>
           </li>
-        </ul>
+          {% endif %}  
       </div>
     </nav>
   </div>

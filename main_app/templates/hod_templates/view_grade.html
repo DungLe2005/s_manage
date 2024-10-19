@@ -11,25 +11,31 @@
                     </div>
                     <table class="table">
                         <thead>
-                          <tr>
-                            <th scope="col">Tên</th>
-                            <th scope="col">Môn</th>
-                            <th scope="col">Bài thi</th>
-                            <th scope="col">Điểm</th>
-                          </tr>
+                            <tr>
+                                <th>Mã Học Phần</th>
+                                <th>Tên Học Phần</th>
+                                <th>Kỳ Học</th>
+                                <th>Điểm Giữa Kỳ</th>
+                                <th>Điểm Cuối Kỳ</th>
+                                <th>Điểm Bài Tập</th>
+                                <th>Hành động</th>
+
+                            </tr>
                         </thead>
                         <tbody>
-                        {% for grade in grades %}
+                            {% for registration in registrations %}
                             <tr>
-                                <td>{{ grade.student }} </td>    
+                                <td>{{ registration.study_section.first.code }}</td>
+                                <td>{{ registration.study_section.first.name }}</td>
+                                <td>{{ registration.semester }}</td>
+                                <td>{{ registration.midterm_score }}</td>
+                                <td>{{ registration.final_score }}</td>
+                                <td>{{ registration.homework_score }}</td>
+                                <td><a href="{% url 'add_grade' registration.id %}" class="btn btn-danger btn-sm" >Cập nhật điểm</a></td>
                             </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center">Không có thông tin sinh viên nào.</td>
-                            </tr>
-                        {% endfor %}
+                            {% endfor %}
                         </tbody>
-                      </table>
+                    </table>
                 </div>
             </div>
         </div>

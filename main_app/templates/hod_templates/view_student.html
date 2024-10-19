@@ -10,7 +10,12 @@
                         <ul class="list-group">
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <h3 class="card-title">{{ page_title }}</h3>
-                                <a href ="{%url 'add_student' %}" target="top">
+                                {% for student in students %}
+                                    <a href="{% url 'register' student.id %}">
+                                        <h2 class="badge bg-primary rounded-pill">Đăng kí học phần</h2>
+                                    </a>
+                                {%endfor%}
+                                <a href ="{%url 'add_student' %}">
                                     <h3 class="badge bg-primary rounded-pill">Thêm sinh viên</h3>
                                 </a>
                             </li>
@@ -20,27 +25,29 @@
                         <thead>
                           <tr>
                             <th scope="col">Tên</th>
+                            <th scope="col">Mã số sinh viên</th>
                             <th scope="col">Email</th>
                             <th scope="col">Giới tính</th>
-                            <th scope="col">Khóa học</th>
-                            <th scope="col">Mã số sinh viên</th>
+                            <th scope="col">Ngày sinh</th>
+                            <th scope="col">lớp</th>
                             <th scope="col">Hành động</th>
                           </tr>
                         </thead>
                         <tbody>
                         {% for student in students %}
-                            <tr>
+                             <tr>
                                 <td>{{ student.profile.first_name }} {{ student.profile.last_name }}</td>
+                                <td>{{ student.code }}</td>
                                 <td>{{ student.profile.email }}</td>
                                 <td>{{ student.profile.gender }}</td>
-                                <td>{{ student.subject.name }}</td>
-                                <td>{{ student.s_code }}</td>
+                                <td>{{ student.birth_day }}</td>
+                                <td>{{ student.classroom }}</td>
                                 <td>
-                                    <a href="#" class="btn btn-warning btn-sm">Sửa</a>
-                                    <a href="#" class="btn btn-danger btn-sm" 
+                                    <a href="{% url 'edit_student' student.id %}" class="btn btn-warning btn-sm">Sửa</a>
+                                    <a href="{% url 'delete_student' student.id %}" class="btn btn-danger btn-sm" 
                                        onclick="return confirm('Bạn có chắc chắn muốn xóa không?');">Xóa</a>
                                 </td>
-                            </tr>
+                            </tr> 
                         {% empty %}
                             <tr>
                                 <td colspan="6" class="text-center">Không có thông tin sinh viên nào.</td>

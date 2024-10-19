@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import UserManager
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.hashers import make_password
+import datetime
 # Create your models here.
 
 class CustomUserManager(UserManager):
@@ -32,10 +33,10 @@ class CustomUser(AbstractUser):
 
     username = None
     user_type = models.CharField(default=1, choices=USER_TYPE, max_length=1)
-    password = models.CharField(max_length=128, default='default_password')
+    password = models.CharField(max_length=128)
     email = models.EmailField(unique=True, default=None)
     gender = models.CharField(max_length=1, choices=GENDER)
-    profile_pic = models.ImageField(null=False, blank=False, default= 'images\avatar-trang-4.jpg' )
+    profile_pic = models.ImageField(null=True, blank=True)
     address = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -44,51 +45,85 @@ class CustomUser(AbstractUser):
     objects = CustomUserManager()
     def __str__(self):
         return self.email 
-    
-
-
-class Session(models.Model):
-    start_year = models.DateField()
-    end_year = models.DateField()
-
-    def __str__(self):
-        return "From " + str(self.start_year) + " to " + str(self.end_year)
-
-     
-class Admin(models.Model):
-    admin = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
 
 class Subject(models.Model):
-    name = models.CharField(max_length=120, null=True, blank=True)
+    name = models.CharField(max_length=120, null=True, blank=True, default="Default Subject")
+    code = models.CharField(max_length=20, default="SUB001")
+    credit_number = models.IntegerField(default=3)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
 
+class Department(models.Model):
+    code = models.CharField(max_length=10, default="DEP001")
+    name = models.CharField(max_length=50, default="Default Department")
+    
+    def __str__(self) -> str:
+        return self.name
+    
+    
+class ClassRoom(models.Model):
+    name = models.CharField(max_length=50, default="Default Class Room")
+    code = models.CharField(max_length=20, default="CLASS001")
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, default=1)  # ID mặc định cho Department
+    
+    def __str__(self) -> str:
+        return self.name
+
 class Student(models.Model):
     profile = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    s_code = models.CharField(max_length=200, null= True, blank=True)
+    birth_day = models.DateField(default=datetime.date(2005, 12, 23))  # Ngày sinh mặc định
+    code = models.CharField(max_length=20, default="STU001")
+    classroom = models.ForeignKey(ClassRoom, on_delete=models.CASCADE, default=1)  # ID mặc định cho ClassRoom
 
     def __str__(self):
-        return self.profile.last_name + "  " + self.profile.first_name
+        return f"{self.profile.last_name} {self.profile.first_name}"
 
+class Study_Section(models.Model):
+    code = models.CharField(max_length=10, default="SEC001")
+    name = models.CharField(max_length=50, default="Default Study Section")
+    year = models.IntegerField(default=1)  # Năm học mặc định
+    is_open = models.BooleanField(default=True, null= True, blank= True) # Trạng thái đăng ký
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, default=1)  # ID mặc định cho Subject
+    
+    def __str__(self) -> str:
+        return self.name
 
-class Staff(models.Model):
-    profile = models.OneToOneField(CustomUser,on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+class Lecturer(models.Model):
+    profile = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, default=1)  
+    study_section = models.ForeignKey(Study_Section, on_delete=models.CASCADE, null=True, blank=True)
+    
     
     def __str__(self):
-        return self.profile.first_name + " " + self.profile.last_name
+        return f"{self.profile.first_name} {self.profile.last_name}"
+    
+class Register(models.Model):
+    SEMESTER_CHOICES = [
+        ('1', 'Học kỳ 1'),
+        ('2', 'Học kỳ 2'),
+        ('3', 'Học kỳ 3'),
+    ]
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True)  
+    study_section = models.ManyToManyField(Study_Section, blank=True)    
+    enrollment_date = models.DateField(auto_now_add=True)  
+    semester = models.TextField(default=1, choices= SEMESTER_CHOICES, max_length=1)
+    midterm_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True) 
+    final_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  
+    homework_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  
+    def __str__(self):
+        return f"{self.student.profile.last_name} - {', '.join([str(section) for section in self.study_section.all()])}"
     
 class Grade(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    exam_type = models.CharField(max_length=100)
-    score = models.DecimalField(max_digits=5, decimal_places=2)
-    date = models.DateField(auto_now_add=True)
+    register = models.OneToOneField(Register, on_delete=models.CASCADE)  # Liên kết 1-1 với bảng Register
+    midterm_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True) 
+    final_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  
+    homework_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  
+
     def __str__(self):
-        return f"{self.student} - {self.subject} - {self.score}"
-    
+        return f"Điểm {self.register.student.profile.last_name} cho {self.register.study_section.all().first().name}"
+
+        
+                                                             

@@ -1,6 +1,7 @@
 {% extends "main_app/foot.html" %}
 {%load static%}
 {% block content %}
+
         <div class="container-fluid form-padding">
             <div class="row">
                 <div class="col-md-12">
@@ -10,10 +11,10 @@
                             <h3 class="card-title">{{page_title}}</h3>
                         </div>
     
-                        {% include "main_app/form_template.html" with messages=messages  form=form button_text="Thêm điểm"%}
+                        {% include "main_app/form_template.html" with messages=messages  form=form button_text="Lưu điểm"%}
                     </div>
                     <!-- /.card -->
-    
+                    
                 </div>
             </div>
         </div>

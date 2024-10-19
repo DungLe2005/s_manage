@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-r621ga0ke*i$z4p(*nb%))w&95h&sa9%)@m(fvw8qks6!p9h*z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -121,7 +121,7 @@ USE_TZ = True
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend',]
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    os.path.join(BASE_DIR, '.\main_app\static')
 ]
 
 # Default primary key field type

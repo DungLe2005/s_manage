@@ -1,14 +1,13 @@
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import *
 from .models import *
 from django.contrib import messages
 from django.urls import reverse
 from django.core.files.storage import FileSystemStorage
-from django.contrib.auth import authenticate, login, logout
-# Create your views here.
+from django.contrib.auth import authenticate, login, logout                      
 
+# Trang đăng nhập
 def login_page(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -18,7 +17,19 @@ def login_page(request):
             user = authenticate(request, email=email, password=password)
             if user is not None:
                 login(request, user)
-                return redirect('home')  # Điều hướng sau khi đăng nhập thành công
+                user = request.user
+                if user.is_authenticated:
+                    context = {
+                        'first_name': user.first_name,
+                        'last_name': user.last_name,
+                    }
+                    if request.user.user_type == '1':
+                        messages.success(request, 'Admin đã đăng nhập thành công')
+                    else:
+                        messages.success(request, f'Người dùng {user.first_name} {user.last_name} đã đăng nhập thành công')
+                else:
+                    context = {}
+                return redirect('home')  # Chuyển hướng về trang chủ sau khi đăng nhập thành công
             else:
                 messages.error(request, "Thông tin đăng nhập không hợp lệ")
     else:
@@ -26,87 +37,229 @@ def login_page(request):
 
     return render(request, 'main_app/login.html')
 
-def gethome(request):
-    return render(request,"hod_templates/home.html")
+# Đăng xuất
+def user_logout(request):
+    logout(request)  # Đăng xuất người dùng
+    return redirect('login')  # Chuyển hướng về trang đăng nhập
 
+# Trang chủ với bảng xếp hạng sinh viên theo từng môn
+def home_view(request):
+    total_students = Student.objects.count()  # Tổng số học sinh
+    total_subjects = Subject.objects.count()  # Tổng số môn học
+
+    context = {
+        'total_students': total_students,
+        'total_subjects': total_subjects,
+        'page_title': 'Trang chủ',
+    }
+    return render(request, 'hod_templates/home.html', context)
+
+# Thêm khoa
+def add_department(request):
+    if not request.user.is_authenticated or (request.user.user_type != '1'):
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+
+    form = DepartmentForm(request.POST or None, request.FILES or None)
+    context = {"form": form, "page_title": "Thêm khoa"}
+    
+    if request.method == "POST":
+        if form.is_valid():
+            try:
+                    # Lấy dữ liệu từ biểu mẫu
+                    name = form.cleaned_data.get("name")
+                    code = form.cleaned_data.get("code")
+                    
+                    department = Department(name=name, code=code)
+                    department.save()
+                    messages.success(request, 'Thêm sinh viên thành công')
+                    return redirect('view_department')  # Chuyển hướng đến trang xem sinh viên
+
+            except:
+                messages.error(request, "Không thể thêm khoa")
+        else:
+            messages.error(request, "Biểu mẫu không hợp lệ")
+
+    return render(request, "hod_templates/add_department.html", context)
+
+#Xem danh sách các khoa
+def view_department(request):
+    if not request.user.is_authenticated or request.user.user_type != '1':
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    departments = Department.objects.all()
+    context = {'departments': departments, "page_title": "Quản lí Khoa"}
+    
+    return render(request, "hod_templates/view_department.html", context)
+
+#Chỉnh sửa thông tin khoa
+def edit_department(request, department_id):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated or request.user.user_type != '1':
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    # Lấy thông tin môn học cần chỉnh sửa
+    instance = get_object_or_404(Department, id=department_id)
+    form = DepartmentForm(request.POST or None, instance=instance)  # Khởi tạo form với dữ liệu hiện tại
+
+    context = {
+        "form": form,
+        "department_id": department_id,
+        "page_title": "Chỉnh sửa thông tin khoa",
+    }
+    
+    # Xử lý khi nhận POST request
+    if request.method == "POST":
+        if form.is_valid():
+            name = form.cleaned_data.get("name")
+            code = form.cleaned_data.get("code")
+            try:
+                department = Department.objects.get(id=department_id)
+                department.name = name
+                department.code = code
+                department.save()
+                
+                messages.success(request, "Cập nhật thành công")
+                return redirect(reverse("view_subject"))
+            except Exception as e:
+                messages.error(request, "Không thể cập nhật: " + str(e))       
+        else:
+            messages.error(request, "Điền biểu mẫu đúng cách")
+    
+    return render(request, "hod_templates/edit_info.html", context)
+
+#Xóa khoa
+def delete_department(request, department_id):
+    if not request.user.is_authenticated or request.user.user_type != '1':
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    try:
+        department = get_object_or_404(Department, id=department_id)
+        department.delete()  # Xóa môn học
+        messages.success(request, "Xóa môn học thành công!")
+    except Exception as e:
+        messages.error(request, f"Đã xảy ra lỗi khi xóa môn học: {str(e)}")
+    
+    return redirect(reverse("view_department"))
+
+#Thêm lớp học
+def add_class(request):
+    if not request.user.is_authenticated or (request.user.user_type != '1'):
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+
+    form = ClassRoomForm(request.POST or None, request.FILES or None)
+    context = {"form": form, "page_title": "Thêm lớp học"}
+    
+    if request.method == "POST":
+        if form.is_valid():
+            try:
+                    # Lấy dữ liệu từ biểu mẫu
+                    name = form.cleaned_data.get("name")
+                    code = form.cleaned_data.get("code")
+                    department = form.cleaned_data.get("department")
+                    classroom = ClassRoom(name=name, code=code, department=department)
+                    classroom.save()
+                    messages.success(request, 'Thêm sinh viên thành công')
+                    return redirect('view_class')  # Chuyển hướng đến trang xem sinh viên
+
+            except:
+                messages.error(request, "Không thể thêm khoa")
+        else:
+            messages.error(request, "Biểu mẫu không hợp lệ")
+
+    return render(request, "hod_templates/add_class.html", context)
+
+#Xem danh sách các lớp học
+def view_class(request):
+    if not request.user.is_authenticated :
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    classrooms = ClassRoom.objects.all()
+    context = {'classrooms': classrooms, "page_title": "Quản lí lớp học"}
+    
+    return render(request, "hod_templates/view_class.html", context)
+
+#Chỉnh sửa thông tin lớp học
+def edit_class(request, classroom_id):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated or request.user.user_type == '3':
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    # Lấy thông tin môn học cần chỉnh sửa
+    instance = get_object_or_404(ClassRoom, id=classroom_id)
+    form = ClassRoomForm(request.POST or None, instance=instance)  # Khởi tạo form với dữ liệu hiện tại
+
+    context = {
+        "form": form,
+        "classroom_id": classroom_id,
+        "page_title": "Chỉnh sửa thông tin lớp học",
+    }
+    
+    # Xử lý khi nhận POST request
+    if request.method == "POST":
+        if form.is_valid():
+            name = form.cleaned_data.get("name")
+            code = form.cleaned_data.get("code")
+            department = form.cleaned_data.get("department")
+            try:
+                classroom = ClassRoom.objects.get(id=classroom_id)
+                classroom.name = name
+                classroom.code = code
+                classroom.department = department
+                classroom.save()
+                
+                messages.success(request, "Cập nhật thành công")
+                return redirect(reverse("view_class"))
+            except Exception as e:
+                messages.error(request, "Không thể cập nhật: " + str(e))       
+        else:
+            messages.error(request, "Điền biểu mẫu đúng cách")
+    
+    return render(request, "hod_templates/edit_info.html", context)
+
+#Xóa lớp học
+def delete_class(request, classroom_id):
+    if not request.user.is_authenticated or request.user.user_type != '1':
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    try:
+        classroom = get_object_or_404(ClassRoom, id=classroom_id)
+        classroom.delete()  # Xóa môn học
+        messages.success(request, "Xóa môn học thành công!")
+    except Exception as e:
+        messages.error(request, f"Đã xảy ra lỗi khi xóa môn học: {str(e)}")
+    
+    return redirect(reverse("view_class"))
+
+# Thêm sinh viên
 def add_student(request):
-    student_form = StudentForm(request.POST, request.FILES)
+    # Kiểm tra quyền truy cập của người dùng
+    if not request.user.is_authenticated or request.user.user_type != '1':
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+
+    student_form = StudentForm(request.POST or None, request.FILES or None)
     context = {'form': student_form, "page_title": "Thêm sinh viên"}
+    
     if request.method == "POST":
         if student_form.is_valid():
             email = student_form.cleaned_data.get("email")
-            # Kiểm tra xem email đã tồn tại hay chưa
             if CustomUser.objects.filter(email=email).exists():
-                 return JsonResponse({"status": "error", "message": "Email đã được đăng ký"}, status=400)
+                messages.error(request, "Email đã được đăng ký")
             else:
                 try:
+                    # Lấy dữ liệu từ biểu mẫu
                     first_name = student_form.cleaned_data.get("first_name")
                     last_name = student_form.cleaned_data.get("last_name")
-                    s_code = student_form.cleaned_data.get("s_code")
+                    code = student_form.cleaned_data.get("code")
                     gender = student_form.cleaned_data.get("gender")
                     address = student_form.cleaned_data.get("address")
                     password = student_form.cleaned_data.get("password")
-                    subject = student_form.cleaned_data.get("subject")
-                    passport = request.FILES["profile_pic"]
-
-                    # Lưu hình ảnh
-                    fs = FileSystemStorage()
-                    filename = fs.save(passport.name, passport)
-                    passport_url = fs.url(filename)
-
-                    # Tạo người dùng
-                    user = CustomUser.objects.create_user(
-                        email=email,
-                        password=password,
-                        user_type=3,
-                        first_name=first_name,
-                        last_name=last_name,
-                        profile_pic=passport_url,
-                    )
-
-                    # Tạo sinh viên
-                    student = Student(profile=user, subject=subject, s_code=s_code)
-                    student.save()
-
-                    # Cập nhật thông tin người dùng
-                    user.gender = gender
-                    user.address = address
-                    user.save()
-                    # return JsonResponse({"status": "success", "message": "Đã thêm thành công"}, status=201)
-                    messages.success(request, 'Thêm sinh viên thành công')
-                    return redirect('view_student')
-                except Exception as e:
-                    messages.success(request, 'Lỗi 500 không thể thêm sinh viên')
-                    return redirect('add_student')
-        else:
-            messages.success(request, 'Email đã tồn tại')
-            return redirect('add_student')
-    else:
-        student_form = StudentForm()  # Khởi tạo form trống khi GET
-        return render(request, 'hod_templates/add_student.html', context)
-
-        # return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
-    
-def add_staff(request):
-    if request.method == "POST":
-        staff_form = StaffForm(request.POST, request.FILES)
-        if staff_form.is_valid():
-            email = staff_form.cleaned_data.get("email")
-            # Kiểm tra xem email đã tồn tại hay chưa
-            if CustomUser.objects.filter(email=email).exists():
-                messages.success(request, 'Email đã tồn tại')
-                return redirect('add_staff')
-            else:
-                try:
-                    first_name = staff_form.cleaned_data.get("first_name")
-                    last_name = staff_form.cleaned_data.get("last_name")
-                    gender = staff_form.cleaned_data.get("gender")
-                    address = staff_form.cleaned_data.get("address")
-                    password = staff_form.cleaned_data.get("password")
-                    subject = staff_form.cleaned_data.get("subject")
+                    classroom = student_form.cleaned_data.get("classroom")
                     passport = request.FILES.get("profile_pic")
 
-                    # Lưu hình ảnh
+                    # Xử lý ảnh đại diện
                     if passport:
                         fs = FileSystemStorage()
                         filename = fs.save(passport.name, passport)
@@ -114,112 +267,288 @@ def add_staff(request):
                     else:
                         passport_url = None
 
-                    # Tạo người dùng
+                    # Tạo người dùng mới
                     user = CustomUser.objects.create_user(
-                        email=email,
-                        password=password,
+                        email=email, password=password, user_type=3,
+                        first_name=first_name, last_name=last_name, profile_pic=passport_url,
+                    )
+
+                    # Tạo sinh viên mới
+                    student = Student(profile=user, classroom=classroom, code=code)
+                    student.save()
+
+                    # Cập nhật thông tin giới tính và địa chỉ cho người dùng
+                    user.gender = gender
+                    user.address = address
+                    user.save()
+
+                    messages.success(request, 'Thêm sinh viên thành công')
+                    return redirect('view_student')  # Chuyển hướng đến trang xem sinh viên
+                except Exception as e:
+                    messages.error(request, f'Lỗi 500: Không thể thêm sinh viên. Lỗi chi tiết: {e}')
+                    return redirect('add_student')
+        else:
+            context['form'] = student_form
+            messages.error(request, f'Form không hợp lệ: {student_form.errors}')
+            return render(request, 'hod_templates/add_student.html', context)
+    
+    return render(request, 'hod_templates/add_student.html', context)
+
+def view_student(request):
+    if not request.user.is_authenticated:
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+
+    if request.user.user_type == '1':
+        students = Student.objects.all()
+    else:
+        students = Student.objects.filter(profile__email=request.user.email)
+
+    context = {"students": students, "page_title": "Quản lí sinh viên"}
+    return render(request, "hod_templates/view_student.html", context)
+
+# Chỉnh sửa thông tin sinh viên
+def edit_student(request, student_id):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    
+    # Kiểm tra quyền truy cập
+    if request.user.user_type != '1' and request.user.user_type != '3':  # HOD
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    
+    student = get_object_or_404(Student, id=student_id)
+    
+    # Xử lý khi nhận POST request
+    if request.method == 'POST':
+        form = EditStudentForm(request.POST, request.FILES, instance=student.profile)  # Truyền instance là student.profile
+        if form.is_valid():
+            form.save()  # Lưu thông tin sinh viên
+            messages.success(request, "Chỉnh sửa thông tin sinh viên thành công!")
+            return redirect('view_student')  # Redirect đến danh sách sinh viên
+    else:
+        form = EditStudentForm(instance=student.profile)  # Khởi tạo form với thông tin hiện tại của profile
+    
+    return render(request, 'hod_templates/edit_info.html', {'form': form, 'student': student})
+
+# Xóa sinh viên
+def delete_student(request, student_id):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    
+    # Kiểm tra quyền truy cập
+    if request.user.user_type != '1':  # HOD
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    
+    try:
+        student = get_object_or_404(CustomUser, student__id=student_id)
+        student.delete()  # Xóa sinh viên
+        messages.success(request, "Xóa học sinh thành công!")
+    except Exception as e:
+        messages.error(request, f"Đã xảy ra lỗi khi xóa học sinh: {str(e)}")
+    
+    return redirect(reverse("view_student"))
+
+# Thêm giảng viên
+def add_lecturer(request):
+    # Kiểm tra quyền truy cập của người dùng
+    if not request.user.is_authenticated or request.user.user_type != '1':
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+
+    if request.method == "POST":
+        lecturer_form = LecturerForm(request.POST, request.FILES)
+        if lecturer_form.is_valid():
+            email = lecturer_form.cleaned_data.get("email")
+            if CustomUser.objects.filter(email=email).exists():
+                messages.error(request, 'Email đã tồn tại')
+                return redirect('add_lecturer')
+            else:
+                try:
+                    # Lấy dữ liệu từ biểu mẫu
+                    first_name = lecturer_form.cleaned_data.get("first_name")
+                    last_name = lecturer_form.cleaned_data.get("last_name")
+                    gender = lecturer_form.cleaned_data.get("gender")
+                    address = lecturer_form.cleaned_data.get("address")
+                    password = lecturer_form.cleaned_data.get("password")
+                    department = lecturer_form.cleaned_data.get("department")
+                    study_section = lecturer_form.cleaned_data.get('study_section')
+
+                    passport = request.FILES.get("profile_pic")
+
+                    # Xử lý ảnh đại diện
+                    if passport:
+                        fs = FileSystemStorage()
+                        filename = fs.save(passport.name, passport)
+                        passport_url = fs.url(filename)
+
+                    # Tạo người dùng mới
+                    user = CustomUser.objects.create_user(
+                        email=email, 
+                        password=password, 
                         user_type=2,
-                        first_name=first_name,
-                        last_name=last_name,
+                        first_name=first_name, 
+                        last_name=last_name, 
                         profile_pic=passport_url
                     )
-                    # Tạo nhân viên
-                    staff = Staff(profile=user, subject=subject)
-                    staff.save()
+                    # Tạo nhân viên mới
+                    lecturer = Lecturer(profile=user, department=department, study_section = study_section)
+                    lecturer.save()
 
-                    # Cập nhật thông tin người dùng
+                    # Cập nhật thông tin giới tính và địa chỉ cho người dùng
                     user.gender = gender
                     user.address = address
                     user.save()
 
                     messages.success(request, 'Thêm nhân viên thành công')
-                    return redirect('view_staff')
+                    return redirect('view_lecturer')  # Chuyển hướng đến trang xem nhân viên
                 except Exception as e:
-                    messages.error(request, f'Lỗi 500 không thể thêm sinh viên: {str(e)}')
-                    return redirect('add_staff')
+                    messages.error(request, f'Lỗi 500 không thể thêm nhân viên: {str(e)}')
+                    return redirect('add_lecturer')
         else:
-            # In ra lỗi cụ thể để dễ theo dõi
-            messages.success(request, 'Email đã tồn tại')
-            return redirect('add_staff')
+            return redirect('add_lecturer')
     else:
-        staff_form = StaffForm()  # Khởi tạo form trống khi GET
-        return render(request, 'hod_templates/add_staff.html', {'form': staff_form, "page_title": "Thêm nhân viên"})
-
+        lecturer_form = LecturerForm()
+        return render(request, 'hod_templates/add_lecturer.html', {'form': lecturer_form, "page_title": "Thêm nhân viên"})
     
-def add_course(request):
+# Xem danh sách giảng viên
+def view_lecturer(request):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+     # Kiểm tra quyền truy cập
+    if request.user.user_type == '1': 
+        lecturer = Student.objects.all()
+    elif request.user.user_type =='2':  
+        lecturer = Lecturer.objects.filter(profile__email = request.user.email)
+    else: 
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    context = {"lecturers": lecturer, "page_title": "Quản lí nhân viên"}
+    return render(request, "hod_templates/view_lecturer.html", context)
+
+# Chỉnh sửa thông tin giản viên
+def edit_lecturer(request, lecturer_id):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    
+    # Kiểm tra quyền truy cập
+    if request.user.user_type != '1':  # HOD
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    
+    lecturer = get_object_or_404(Lecturer, id=lecturer_id)
+    
+    # Xử lý khi nhận POST request
+    if request.method == 'POST':
+        form = EditLecturerForm(request.POST, request.FILES, instance=lecturer)
+        if form.is_valid():
+            form.save()  # Lưu thông tin nhân viên
+            messages.success(request, "Chỉnh sửa thông tin nhân viên thành công!")
+            return redirect('view_lecturer')  # Redirect đến danh sách nhân viên
+    else:
+        form = EditLecturerForm(instance=lecturer)  # Khởi tạo form với thông tin hiện tại của lecturer
+    
+    return render(request, 'hod_templates/edit_info.html', {'form': form, 'lecturer': lecturer})
+
+# Xóa nhân viên
+def delete_lecturer(request, lecturer_id):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    
+    # Kiểm tra quyền truy cập
+    if request.user.user_type != '1':  # HOD
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    
+    try:
+        lecturer = get_object_or_404(Lecturer, id=lecturer_id)
+        lecturer.delete()  # Xóa nhân viên
+        messages.success(request, "Xóa nhân viên thành công!")
+    except Exception as e:
+        messages.error(request, f"Đã xảy ra lỗi khi xóa nhân viên: {str(e)}")
+    
+    return redirect(reverse("view_lecturer"))
+
+# Thêm môn học
+def add_subject(request):
+    # Kiểm tra quyền truy cập của người dùng
+    if not request.user.is_authenticated or (request.user.user_type != '1' and request.user.user_type != '2'):
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+
     form = SubjectForm(request.POST or None)
     context = {"form": form, "page_title": "Thêm khóa học"}
+    
     if request.method == "POST":
         if form.is_valid():
             name = form.cleaned_data.get("name")
+            code = form.cleaned_data.get("code")
+            credit_number = form.cleaned_data.get("credit_number")
             try:
-                course = Subject()
-                course.name = name
-                if course.name == None:
-                    return redirect(reverse("add_course"), messages.success(request, "Vui lòng điền tên khóa học"))
-
-                course.save()
-                return redirect(reverse("view_subject"), messages.success(request, "Đã thêm thành công"))
+                # Tạo môn học mới
+                subject = Subject(name=name, code=code,credit_number=credit_number)
+                subject.save()
+                messages.success(request, "Đã thêm thành công")
+                return redirect('view_subject')  # Chuyển hướng đến trang xem môn học
             except:
-                messages.error(request, "Could Not Add")
+                messages.error(request, "Không thể thêm khóa học")
         else:
-            messages.error(request, "Could Not Add")
-    return render(request, "hod_templates/add_course.html", context)
+            messages.error(request, "Biểu mẫu không hợp lệ")
 
-def add_grade(request):
-    if request.method == 'POST':
-            form = GradeForm(request.POST)
-            if form.is_valid():
-                grade = form.save(commit=False)
-                grade.teacher = request.user  # Gán giáo viên hiện tại (người đăng nhập)
-                grade.save()
-                return redirect('123')  # Điều hướng đến danh sách điểm sau khi lưu thành công
-    return render(request, 'hod_templates/add_grade.html', {'form': GradeForm, "page_title": "Thêm điểm"})
+    return render(request, "hod_templates/add_subject.html", context)
 
-
-def view_student(request):
-    students = Student.objects.select_related('profile').all()  # Lấy tất cả sinh viên từ model Student
-    
-    if not students.exists():
-        print("Không tìm thấy sinh viên nào.")  # Kiểm tra xem có sinh viên nào không
-    
-    context = {"students": students, "page_title": "Quản lí sinh viên"}
-    return render(request, "hod_templates/view_student.html", context)
-
-def view_staff(request):
-    staffs = Staff.objects.select_related('profile').all()  # Lấy tất cả sinh viên từ model Student
-    
-    if not staffs.exists():
-        print("Không tìm thấy sinh viên nào.")  # Kiểm tra xem có sinh viên nào không
-    
-    context = {"staffs": staffs, "page_title": "Quản lí nhân viên"}
-    return render(request, "hod_templates/view_staff.html", context)
-
+# Xem danh sách môn học
 def view_subject(request):
-    subjects = Subject.objects.all
-    context = {'subjects':subjects,"page_title":"Quản lí khóa học"}
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    
+    # Kiểm tra quyền truy cập
+    if request.user.user_type != '1' and request.user.user_type != '2':  # HOD
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    
+    # Lấy tất cả môn học
+    subjects = Subject.objects.all()
+    context = {'subjects': subjects, "page_title": "Quản lí môn học"}
     
     return render(request, "hod_templates/view_subject.html", context)
 
-#@login_required
-def view_grade(request):
- #   if request.user.user_type == '2':  # Giáo viên
- #       grades = Grade.objects.filter(teacher=request.user)
-#    elif request.user.user_type == '3':  # Sinh viên
- #       grades = Grade.objects.filter(student=request.user.student)
- #   else:
-    grades = Grade.objects.all  # Admin có thể xem tất cả 
-    return render(request, 'hod_templates/view_grade.html', {'grades': grades})
-
+# Chỉnh sửa thông tin môn học
 def edit_subject(request, subject_id):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    
+    # Kiểm tra quyền truy cập
+    if request.user.user_type == '3': 
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    
+    # Lấy thông tin môn học cần chỉnh sửa
     instance = get_object_or_404(Subject, id=subject_id)
-    form = SubjectForm(request.POST or None, instance=instance)
+    form = SubjectForm(request.POST or None, instance=instance)  # Khởi tạo form với dữ liệu hiện tại
+
     context = {
         "form": form,
         "subject_id": subject_id,
         "page_title": "Chỉnh sửa thông tin môn học",
     }
     
+    # Xử lý khi nhận POST request
     if request.method == "POST":
         if form.is_valid():
             name = form.cleaned_data.get("name")
@@ -230,66 +559,309 @@ def edit_subject(request, subject_id):
                 subject.name = name
                 subject.save()
                 
-                
                 messages.success(request, "Cập nhật thành công")
                 return redirect(reverse("view_subject"))
             except Exception as e:
                 messages.error(request, "Không thể cập nhật: " + str(e))       
         else:
             messages.error(request, "Điền biểu mẫu đúng cách")
+    
     return render(request, "hod_templates/edit_subject.html", context)
 
+# Xóa môn học
 def delete_subject(request, subject_id):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    
+    # Kiểm tra quyền truy cập
+    if request.user.user_type != '1' and request.user.user_type != '2':  # HOD
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    
     try:
         subject = get_object_or_404(Subject, id=subject_id)
-        subject.delete()
+        subject.delete()  # Xóa môn học
         messages.success(request, "Xóa môn học thành công!")
     except Exception as e:
         messages.error(request, f"Đã xảy ra lỗi khi xóa môn học: {str(e)}")
+    
     return redirect(reverse("view_subject"))
 
-def edit_student(request, student_id):
-    student = get_object_or_404(Student, id=student_id)
-    form = StudentForm(request.POST or None, instance=student)
-    context = {
-        "form": form,
-        "student_id": student_id,
-        "page_title": "Chỉnh sửa thông tin học sinh",
-    }
+# Thêm học phần
+def add_studysection(request):
+    # Kiểm tra quyền truy cập của người dùng
+    if not request.user.is_authenticated or (request.user.user_type != '1' and request.user.user_type != '2'):
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+
+    form = StudySectionForm(request.POST or None)
+    context = {"form": form, "page_title": "Thêm học phần"}
+    
     if request.method == "POST":
         if form.is_valid():
-            first_name = form.cleaned_data.get("first_name")
-            last_name = form.cleaned_data.get("last_name")
-            address = form.cleaned_data.get("address")
-            username = form.cleaned_data.get("username")
-            email = form.cleaned_data.get("email")
-            gender = form.cleaned_data.get("gender")
-            password = form.cleaned_data.get("password") or None
-            subject = form.cleaned_data.get("subject")
-            passport = request.FILES.get("profile_pic") or None
+            name = form.cleaned_data.get("name")
+            code = form.cleaned_data.get("code")
+            year = form.cleaned_data.get("year")
+            subject =form.cleaned_data.get("subject")
             try:
-                user = CustomUser.objects.get(id=student.profile.id)
-                if passport != None:
-                    fs = FileSystemStorage()
-                    filename = fs.save(passport.name, passport)
-                    passport_url = fs.url(filename)
-                    user.profile_pic = passport_url
-                user.username = username
-                user.email = email
-                if password != None:
-                    user.set_password(password)
-                user.first_name = first_name
-                user.last_name = last_name
-                user.gender = gender
-                user.address = address
-                student.subject = subject
-                user.save()
-                student.save()
-                messages.success(request, "Cập nhật thành công")
-                return redirect(reverse("view_student"))
-            except Exception as e:
-                messages.error(request, "Không thể cập nhật " + str(e))
+                # Tạo môn học mới
+                study_section = Study_Section(name=name, code=code,year=year,subject=subject)
+                study_section.save()
+                messages.success(request, "Đã thêm thành công")
+                return redirect('view_studysection')  # Chuyển hướng đến trang xem môn học
+            except:
+                messages.error(request, "Không thể thêm học phần")
         else:
-            messages.error(request, "Vui lòng điền đầy đủ thông tin vào biểu mẫu!")
+            messages.error(request, "Biểu mẫu không hợp lệ")
+
+    return render(request, "hod_templates/add_studysection.html", context)
+
+# Xem danh sách học phần
+def view_studysection(request):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    
+    # Lấy tất cả học phần
+    studysections = Study_Section.objects.all()
+    context = {'studysections': studysections, "page_title": "Quản lí học phần"}
+    
+    return render(request, "hod_templates/view_studysections.html", context)
+
+# Chỉnh sửa thông tin học phần
+def edit_studysection(request, studysection_id):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    
+    # Kiểm tra quyền truy cập
+    if request.user.user_type == '3': 
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    
+    # Lấy thông tin môn học cần chỉnh sửa
+    instance = get_object_or_404(Study_Section, id=studysection_id)
+    form = StudySectionForm(request.POST or None, instance=instance)  # Khởi tạo form với dữ liệu hiện tại
+
+    context = {
+        "form": form,
+        "studysection_id": studysection_id,
+        "page_title": "Chỉnh sửa thông tin học phần",
+    }
+    
+    # Xử lý khi nhận POST request
+    if request.method == "POST":
+        if form.is_valid():
+            name = form.cleaned_data.get("name")
+            code = form.cleaned_data.get("code")
+            year = form.cleaned_data.get("year")
+            subject =form.cleaned_data.get("subject")
+            try:
+                study_section = Study_Section.objects.get(id=studysection_id)
+                study_section.name = name
+                study_section.code = code
+                study_section.year = year
+                study_section.subject = subject
+                study_section.save()
+                
+                messages.success(request, "Cập nhật thành công")
+                return redirect(reverse("view_studysection"))
+            except Exception as e:
+                messages.error(request, "Không thể cập nhật: " + str(e))       
+        else:
+            messages.error(request, "Điền biểu mẫu đúng cách")
+    
+    return render(request, "hod_templates/edit_info.html", context)
+
+# Xóa học phần
+def delete_studysection(request, studysection_id):
+    # Kiểm tra người dùng đã đăng nhập chưa
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    
+    # Kiểm tra quyền truy cập
+    if request.user.user_type != '1' and request.user.user_type != '2':  # HOD
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    
+    try:
+        studysection = get_object_or_404(Study_Section, id=studysection_id)
+        studysection.delete()  # Xóa học phần
+        messages.success(request, "Xóa học phần thành công!")
+    except Exception as e:
+        messages.error(request, f"Đã xảy ra lỗi khi xóa học phần: {str(e)}")
+    
+    return redirect(reverse("view_studysection"))
+
+def register(request, student_id):
+    # Lấy student instance
+    student = get_object_or_404(Student, id=student_id)
+
+    if request.user.is_authenticated and hasattr(request.user, 'student'):
+        # Nếu đã đăng nhập và user là sinh viên
+        student = request.user.student  
     else:
-        return render(request, "hod_template/edit_student.html", context)
+        # Nếu không, có thể báo lỗi hoặc redirect
+        messages.error(request, "Bạn không có quyền truy cập.")
+        return redirect('home')  # Hoặc redirect đến trang khác
+
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        selected_sections = request.POST.getlist('study_sections')  # Lấy danh sách học phần đã chọn
+        study_sections = Study_Section.objects.filter(id__in=selected_sections, is_open=True)  # Lọc học phần đang mở
+
+        if not study_sections.exists():  # Nếu không có học phần mở
+            messages.error(request, "Hiện không có học phần nào đang mở để đăng ký.")
+            return redirect('register', student_id=student.id)
+
+        if form.is_valid():
+            # Kiểm tra trùng lặp
+            existing_sections = Register.objects.filter(student=student, study_section__in=study_sections)
+            if existing_sections.exists():
+                messages.error(request, "Bạn đã đăng ký một số học phần này.")
+                return redirect('register', student_id=student.id)
+
+            # Tạo bản ghi đăng ký mới cho sinh viên
+            register = Register(student=student, semester=form.cleaned_data['semester'])
+            register.save()  # Lưu đăng ký trước
+            register.study_section.set(study_sections)  # Gán các học phần đã chọn
+            register.save()
+
+            # Thông báo thành công
+            messages.success(request, "Đăng ký học phần thành công!")
+            return redirect('view_register', student_id=student.id)
+        else:
+            messages.error(request, "Có lỗi trong form.")
+    else:
+        form = RegisterForm()
+
+    sections = Study_Section.objects.filter(is_open=True)  # Lấy học phần đang mở
+    return render(request, 'hod_templates/register.html', {'student': student, 'sections': sections, 'form': form, 'page_title': 'Đăng kí học phần'})
+
+
+def view_register(request, student_id):
+    # Kiểm tra xem user có student không
+    try:
+        student = get_object_or_404(Student, id=student_id)  # Sử dụng student_id để lấy thông tin sinh viên
+        print(f"Student found: {student}")  # In thông tin sinh viên
+    except Student.DoesNotExist:
+        student = None
+        print("No student found for this user.")  # Thông báo nếu không tìm thấy sinh viên
+
+    if student:
+        # Lấy danh sách học phần đã đăng ký cho sinh viên này
+        registrations = Register.objects.filter(student=student)
+        print(f"Registrations found: {registrations}")  # In danh sách đăng ký
+    else:
+        registrations = None
+        print("No registrations found.")  # Thông báo nếu không có đăng ký
+
+    return render(request, 'hod_templates/view_register.html', {'registrations': registrations, 'student': student})
+
+
+def add_grade(request, registration_id):
+    registration = get_object_or_404(Register, id=registration_id)
+
+    if request.method == 'POST':
+        form = GradeForm(request.POST, instance=registration)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Điểm đã được cập nhật thành công!")
+            return redirect('view_grade')  # Redirect về trang xem học phần đã đăng ký
+    else:
+        form = GradeForm(instance=registration)
+
+    return render(request, 'hod_templates/add_grade.html', {'form': form, 'registration': registration, 'page_title': 'Nhập điểm' })
+
+def view_grade(request):
+    try:
+        student = request.user.student  # Lấy đối tượng Student từ user hiện tại
+    except Student.DoesNotExist:
+        student = None
+
+    if student:
+        registrations = Register.objects.filter(student=student)
+    else:
+        registrations = None
+
+    return render(request, 'hod_templates/view_grade.html', {'registrations': registrations, 'page_title': 'Xem điểm'})
+
+
+# def edit_grade(request, grade_id):
+#     if not request.user.is_authenticated:
+#         messages.error(request,'Bạn không có quyền truy cập!!!!!')
+#         return redirect('home')
+#     # Lấy instance của Grade cần sửa
+#     grade = get_object_or_404(Register, id=grade_id)
+
+#     # Kiểm tra quyền của user, chỉ cho phép lecturer hoặc admin
+#     if request.user.user_type != '1' and request.user.user_type != '2':
+#         messages.error(request, 'Bạn không có quyền chỉnh sửa điểm!')
+#         return redirect('home')
+
+#     if request.method == 'POST':
+#         form = GradeForm(request.POST, instance=grade)  # Cập nhật với dữ liệu POST
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, 'Điểm đã được cập nhật thành công!')
+#             return redirect('view_grade')
+#         else:
+#             messages.error(request, 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.')
+#     else:
+#         form = GradeForm(instance=grade)  # Khởi tạo form với dữ liệu hiện tại của Grade
+
+#     return render(request, 'hod_templates/edit_info.html', {'form': form, 'page_title': 'Chỉnh sửa điểm'})
+
+# def delete_grade(request, grade_id):
+#     if not request.user.is_authenticated:
+#         messages.error(request,'Bạn không có quyền truy cập!!!!!')
+#         return redirect('home')
+#     if request.user.user_type != '1' and request.user.user_type != '2':
+#         messages.error(request,'Bạn không có quyền truy cập!!!!!')
+#         return redirect(reverse("home"))
+#     try:
+#         grade = get_object_or_404(Register, id=grade_id)
+#         grade.delete()
+#         messages.success(request, "Xóa học sinh thành công!")
+#     except Exception as e:
+#         messages.error(request, f"Đã xảy ra lỗi khi xóa học sinh: {str(e)}")
+#     return redirect(reverse("view_grade"))
+
+def search_view(request):
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    query = request.GET.get('q', '').strip()  # Lấy từ khóa tìm kiếm từ GET request và loại bỏ khoảng trắng ở đầu và cuối
+
+    # Tách các từ trong từ khóa tìm kiếm
+    query_terms = query.split()
+
+    # Tìm kiếm sinh viên theo họ và tên
+    students = Student.objects.filter(
+        Q(profile__first_name__icontains=query_terms[0]) | Q(profile__last_name__icontains=query_terms[0])
+    )
+    for term in query_terms[1:]:
+        students = students | Student.objects.filter(
+            Q(profile__first_name__icontains=term) | Q(profile__last_name__icontains=term)
+        )
+
+    # Tìm kiếm giáo viên theo họ và tên
+    teachers = Lecturer.objects.filter(
+        Q(profile__first_name__icontains=query_terms[0]) | Q(profile__last_name__icontains=query_terms[0])
+    )
+    for term in query_terms[1:]:
+        teachers = teachers | Lecturer.objects.filter(
+            Q(profile__first_name__icontains=term) | Q(profile__last_name__icontains=term)
+        )
+
+    context = {
+        'query': query,
+        'students': students,
+        'teachers': teachers,
+    }
+    return render(request, 'hod_templates/search_results.html', context)

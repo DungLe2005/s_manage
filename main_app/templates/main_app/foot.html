@@ -23,17 +23,29 @@
             {% if messages %}
             <div id="message-container">
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" style='color: black;'>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
+                    {% if message.tags == "success" %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% elif message.tags == "error" %}
+                        <div class="alert alert-danger alert-dismissdanible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endif %}
                 {% endfor %}
             </div>
-            {% endif %}
+        {% endif %}
+        <div class ="main-content">
             {% block content %}{% endblock content %}
-            </section>
-        <br class="break">
-        <br>
+            <br class="break">
+            <br class = 'break'>
+            <br class = 'break'>
+            <br class = 'break'>
+        </div>
+        </section>
+        
         {% include 'main_app/footer.html' %}
          <!--js-->
         <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -41,7 +53,6 @@
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-        <script rel="stylesheet" src="{% static 'dist\js\Script.js' %}"></script>
         <script>
             $(document).ready(function() {
                 console.log("Document is ready");
