@@ -168,13 +168,11 @@ class EditLecturerForm(forms.ModelForm):
 
     
 class GradeForm(FormSettings):
-    def __init__(self, *args, **kwargs):
-        super(GradeForm, self).__init__(*args, **kwargs)
-    
-    class Meta():
-        model = Grade
-        fields = ['homework_score', 'midterm_score', 'final_score']
-    homework_score = forms.DecimalField(required=True,label='Điểm bài tập'),
-    midterm_score = forms.DecimalField(required=True,label='Điểm giữa kì'),
-    final_score = forms.DecimalField(required=True,label='Điểm cuối kì'),
-    
+    class Meta:
+        model = Register
+        fields = ['midterm_score', 'final_score', 'homework_score']
+        widgets = {
+            'midterm_score': forms.NumberInput(attrs={'min': 0, 'max': 10, 'step': 0.01}),
+            'final_score': forms.NumberInput(attrs={'min': 0, 'max': 10, 'step': 0.01}),
+            'homework_score': forms.NumberInput(attrs={'min': 0, 'max': 10, 'step': 0.01}),
+        }

@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import *
@@ -46,6 +47,7 @@ def user_logout(request):
 def home_view(request):
     total_students = Student.objects.count()  # Tổng số học sinh
     total_subjects = Subject.objects.count()  # Tổng số môn học
+    print(f"Register: {register}")  # Kiểm tra giá trị register
 
     context = {
         'total_students': total_students,
@@ -744,52 +746,45 @@ def register(request, student_id):
     return render(request, 'hod_templates/register.html', {'student': student, 'sections': sections, 'form': form, 'page_title': 'Đăng kí học phần'})
 
 
-def view_register(request, student_id):
-    # Kiểm tra xem user có student không
+def view_register(request):
+    if not request.user.is_authenticated:
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+
+    if request.user.user_type == '1' and request.user.user_type == '2':
+        registers = Register.objects.all()
+    if request.user.user_type == '2':
+        registers = Register.objects.all()
+    if request.user.user_type == '3':
+        registers = Register.objects.filter(student__profile__email=request.user.email)
+
+    context = {"registers": registers, "page_title": "Xem điểm"}
+
+    return render(request, 'hod_templates/view_register.html', context)
+
+def add_grade(request, register_id):
+    user = request.user
+    register = get_object_or_404(Register, id=register_id)
+
     try:
-        student = get_object_or_404(Student, id=student_id)  # Sử dụng student_id để lấy thông tin sinh viên
-        print(f"Student found: {student}")  # In thông tin sinh viên
-    except Student.DoesNotExist:
-        student = None
-        print("No student found for this user.")  # Thông báo nếu không tìm thấy sinh viên
+        lecturer = Lecturer.objects.get(profile=user)  # Lấy thông tin giáo viên
+        # Kiểm tra xem giáo viên có trách nhiệm cho học phần này không
+        if not register.study_section.filter(id=lecturer.study_section.id).exists():
+            return HttpResponse("Bạn không có quyền thêm điểm cho sinh viên này trong học phần này.")
+    except Lecturer.DoesNotExist:
+        return HttpResponse("Không tìm thấy thông tin giảng viên.")
 
-    if student:
-        # Lấy danh sách học phần đã đăng ký cho sinh viên này
-        registrations = Register.objects.filter(student=student)
-        print(f"Registrations found: {registrations}")  # In danh sách đăng ký
-    else:
-        registrations = None
-        print("No registrations found.")  # Thông báo nếu không có đăng ký
-
-    return render(request, 'hod_templates/view_register.html', {'registrations': registrations, 'student': student})
-
-
-def add_grade(request, registration_id):
-    registration = get_object_or_404(Register, id=registration_id)
-
+    # Xử lý form khi có dữ liệu POST
     if request.method == 'POST':
-        form = GradeForm(request.POST, instance=registration)
+        form = GradeForm(request.POST, instance=register)  # Liên kết với bản ghi đã tồn tại
         if form.is_valid():
-            form.save()
-            messages.success(request, "Điểm đã được cập nhật thành công!")
-            return redirect('view_grade')  # Redirect về trang xem học phần đã đăng ký
+            form.save()  # Lưu lại các thay đổi
+            return redirect('view_register')  # Redirect đến trang xem đăng ký
     else:
-        form = GradeForm(instance=registration)
+        form = GradeForm(instance=register)  # Tạo form với dữ liệu hiện tại
 
-    return render(request, 'hod_templates/add_grade.html', {'form': form, 'registration': registration, 'page_title': 'Nhập điểm' })
-
-def view_grade(request):
-    try:
-        student = request.user.student  # Lấy đối tượng Student từ user hiện tại
-    except Student.DoesNotExist:
-        student = None
-
-    if student:
-        registrations = Register.objects.filter(student=student)
-    else:
-        registrations = None
-
-    return render(request, 'hod_templates/view_grade.html', {'registrations': registrations, 'page_title': 'Xem điểm'})
+    return render(request, 'hod_templates/add_grade.html', {'form': form, 'register': register})
+  
 
 
 # def edit_grade(request, grade_id):
@@ -865,3 +860,4 @@ def search_view(request):
         'teachers': teachers,
     }
     return render(request, 'hod_templates/search_results.html', context)
+

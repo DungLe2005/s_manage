@@ -3,6 +3,7 @@ from django.contrib.auth.models import UserManager
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.hashers import make_password
 import datetime
+from decimal import Decimal
 # Create your models here.
 
 class CustomUserManager(UserManager):
@@ -115,15 +116,14 @@ class Register(models.Model):
     homework_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  
     def __str__(self):
         return f"{self.student.profile.last_name} - {', '.join([str(section) for section in self.study_section.all()])}"
+    @property
+    def Average(self):
+        if self.homework_score==None or self.midterm_score==None or self.final_score==None:
+            return None
+        else:
+            return self.homework_score * Decimal(0.1) + self.midterm_score * Decimal(0.4) + self.final_score * Decimal(0.5)
     
-class Grade(models.Model):
-    register = models.OneToOneField(Register, on_delete=models.CASCADE)  # Liên kết 1-1 với bảng Register
-    midterm_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True) 
-    final_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  
-    homework_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  
 
-    def __str__(self):
-        return f"Điểm {self.register.student.profile.last_name} cho {self.register.study_section.all().first().name}"
 
         
                                                              

@@ -39,11 +39,10 @@ urlpatterns = [
     
     #Register urls
     path('register/<int:student_id>/', views.register, name='register'),
-    path('view_register/<int:student_id>/', views.view_register, name='view_register'),
+    path('view_register/', views.view_register, name='view_register'),
     
     
-    path('add_grade/<int:registration_id>/',views.add_grade, name='add_grade'),
-    path('view_grade/', views.view_grade, name="view_grade"),
+    path('add_grade/<int:register_id>/', views.add_grade, name='add_grade'),
     # path('edit_grade/<int:grade_id>/', views.edit_grade, name='edit_grade'),
     # path("delete_grade/<int:grade_id>",views.delete_grade, name='delete_grade'),
 ]

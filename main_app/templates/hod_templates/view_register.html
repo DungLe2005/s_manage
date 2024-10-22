@@ -10,30 +10,43 @@
                         <ul class="list-group">
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <h3 class="card-title">{{ page_title }}</h3>
-                                <a href ="{% url 'add_studysection' %}">
-                                    <h3 class="badge bg-primary rounded-pill">Thêm học phần</h3>
-                                </a>
                             </li>
                         </ul>
                     </div>
-                    {% for registration in registrations %}
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Mã Học Phần</th>
+                                <th>Sinh viên</th>
                                 <th>Tên Học Phần</th>
+                                <th>Mã Học Phần</th>
                                 <th>Kỳ Học</th>
+                                <th>Điểm Giữa Kỳ</th>
+                                <th>Điểm Cuối Kỳ</th>
+                                <th>Điểm Bài Tập</th>
+                                <th>Điểm Trung bình môn</th>
+                                <th>Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for registration in registrations %}
-                                {% for section in registration.study_section.all %}  {# Lặp qua tất cả các học phần trong đăng ký #}
+                            {% for register in registers %}
                                     <tr>
-                                        <td>{{ section.code }}</td>
-                                        <td>{{ section.name }}</td>                                       
-                                        <td>{{ registration.semester }}</td>
+                                        <td>{{ register.student.profile.first_name }} {{ register.student.profile.last_name }}</td>
+                                        {% for section in register.study_section.all %}
+                                            <td>{{ section.name }}</td>
+                                            <td>{{ section.code  }}</td>   
+                                        {% endfor %}                       
+                                        <td>{{ register.semester }}</td>
+                                        <td>{{ register.midterm_score }}</td>
+                                        <td>{{ register.final_score }}</td>
+                                        <td>{{ register.homework_score }}</td>
+                                        <td>{{ register.Average|floatformat:2}}</td>
+                                        <td>
+                                            <a href="#" class="btn btn-warning btn-sm">Sửa</a>
+                                            <a href="#" class="btn btn-danger btn-sm" 
+                                               onclick="return confirm('Bạn có chắc chắn muốn xóa không?');">Xóa</a>
+                                            <a href="{% url 'add_grade' register.id %}" class="btn btn-warning btn-sm">Nhập điểm</a>
+                                        </td>
                                     </tr>
-                                {% endfor %}
                             {% empty %}
                                 <tr>
                                     <td colspan="4">Không có học phần nào đã đăng ký.</td>
@@ -41,7 +54,6 @@
                             {% endfor %}
                         </tbody>
                       </table>
-                    {% endfor %}
                 </div>
             </div>
         </div>
