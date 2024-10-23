@@ -1,4 +1,3 @@
-from django.http import HttpResponse
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import *
@@ -756,7 +755,7 @@ def register(request, student_id):
 
             # Thông báo thành công
             messages.success(request, "Đăng ký học phần thành công!")
-            return redirect('view_register', student_id=student.id)
+            return redirect('view_register')
         else:
             messages.error(request, "Có lỗi trong form.")
     else:
@@ -765,13 +764,12 @@ def register(request, student_id):
     sections = Study_Section.objects.filter(is_open=True)  # Lấy học phần đang mở
     return render(request, 'hod_templates/register.html', {'student': student, 'sections': sections, 'form': form, 'page_title': 'Đăng kí học phần'})
 
-
 def view_register(request):
     if not request.user.is_authenticated:
         messages.error(request, 'Bạn không có quyền truy cập!!!!!')
         return redirect('home')
 
-    if request.user.user_type == '1' and request.user.user_type == '2':
+    if request.user.user_type == '1':
         registers = Register.objects.all()
     if request.user.user_type == '2':
         registers = Register.objects.all()
@@ -781,6 +779,21 @@ def view_register(request):
     context = {"registers": registers, "page_title": "Xem điểm"}
 
     return render(request, 'hod_templates/view_register.html', context)
+
+def delete_register(request, register_id):
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    if request.user.user_type != '2':
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    try:
+        registers = get_object_or_404(Register, id=register_id)
+        registers.delete()
+        messages.success(request, "Xóa học sinh thành công!")
+    except Exception as e:
+        messages.error(request, f"Đã xảy ra lỗi khi xóa học sinh: {str(e)}")
+    return redirect(reverse("view_register"))
 
 def add_grade(request, register_id):
     if not request.user.is_authenticated:
@@ -796,9 +809,11 @@ def add_grade(request, register_id):
         lecturer = Lecturer.objects.get(profile=user)  # Lấy thông tin giáo viên
         # Kiểm tra xem giáo viên có trách nhiệm cho học phần này không
         if not register.study_section.filter(id=lecturer.study_section.id).exists():
-            return HttpResponse("Bạn không có quyền thêm điểm cho sinh viên này trong học phần này.")
+            messages.error(request,"Bạn không có quyền thêm điểm cho sinh viên này trong học phần này.")
+            return redirect('view_register')
     except Lecturer.DoesNotExist:
-        return HttpResponse("Không tìm thấy thông tin giảng viên.")
+        messages.error(request,"Không tìm thấy thông tin giảng viên.")
+        return redirect('view_register')
 
     # Xử lý form khi có dữ liệu POST
     if request.method == 'POST':
@@ -813,45 +828,47 @@ def add_grade(request, register_id):
   
 
 
-# def edit_grade(request, grade_id):
-#     if not request.user.is_authenticated:
-#         messages.error(request,'Bạn không có quyền truy cập!!!!!')
-#         return redirect('home')
-#     # Lấy instance của Grade cần sửa
-#     grade = get_object_or_404(Register, id=grade_id)
+def edit_grade(request, register_id):
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    # Lấy instance của Grade cần sửa
+    grade = get_object_or_404(Register, id=register_id)
 
-#     # Kiểm tra quyền của user, chỉ cho phép lecturer hoặc admin
-#     if request.user.user_type != '1' and request.user.user_type != '2':
-#         messages.error(request, 'Bạn không có quyền chỉnh sửa điểm!')
-#         return redirect('home')
+    # Kiểm tra quyền của user, chỉ cho phép lecturer hoặc admin
+    if request.user.user_type != '2':
+        messages.error(request, 'Bạn không có quyền chỉnh sửa điểm!')
+        return redirect('home')
 
-#     if request.method == 'POST':
-#         form = GradeForm(request.POST, instance=grade)  # Cập nhật với dữ liệu POST
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, 'Điểm đã được cập nhật thành công!')
-#             return redirect('view_grade')
-#         else:
-#             messages.error(request, 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.')
-#     else:
-#         form = GradeForm(instance=grade)  # Khởi tạo form với dữ liệu hiện tại của Grade
+    if request.method == 'POST':
+        form = GradeForm(request.POST, instance=grade)  # Cập nhật với dữ liệu POST
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Điểm đã được cập nhật thành công!')
+            return redirect('view_register')
+        else:
+            messages.error(request, 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.')
+    else:
+        form = GradeForm(instance=grade)  # Khởi tạo form với dữ liệu hiện tại của Grade
 
-#     return render(request, 'hod_templates/edit_info.html', {'form': form, 'page_title': 'Chỉnh sửa điểm'})
+    return render(request, 'hod_templates/edit_info.html', {'form': form, 'page_title': 'Chỉnh sửa điểm'})
 
-# def delete_grade(request, grade_id):
-#     if not request.user.is_authenticated:
-#         messages.error(request,'Bạn không có quyền truy cập!!!!!')
-#         return redirect('home')
-#     if request.user.user_type != '1' and request.user.user_type != '2':
-#         messages.error(request,'Bạn không có quyền truy cập!!!!!')
-#         return redirect(reverse("home"))
-#     try:
-#         grade = get_object_or_404(Register, id=grade_id)
-#         grade.delete()
-#         messages.success(request, "Xóa học sinh thành công!")
-#     except Exception as e:
-#         messages.error(request, f"Đã xảy ra lỗi khi xóa học sinh: {str(e)}")
-#     return redirect(reverse("view_grade"))
+def delete_grade(request, register_id):
+    if not request.user.is_authenticated:
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    if request.user.user_type != '2':
+        messages.error(request,'Bạn không có quyền truy cập!!!!!')
+        return redirect(reverse("home"))
+    try:
+        grade = get_object_or_404(Register, id=register_id)
+        grade.homework_score.delete()
+        grade.midterm_score.delete()
+        grade.final_score.delete()
+        messages.success(request, "Xóa học sinh thành công!")
+    except Exception as e:
+        messages.error(request, f"Đã xảy ra lỗi khi xóa học sinh: {str(e)}")
+    return redirect(reverse("view_register"))
 
 def search_view(request):
     if not request.user.is_authenticated:

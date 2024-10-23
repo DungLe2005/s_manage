@@ -41,8 +41,8 @@
                                         <td>{{ register.homework_score }}</td>
                                         <td>{{ register.Average|floatformat:2}}</td>
                                         <td>
-                                            <a href="#" class="btn btn-warning btn-sm">Sửa</a>
-                                            <a href="#" class="btn btn-danger btn-sm" 
+                                            <a href="{% url 'edit_grade' register.id %}" class="btn btn-warning btn-sm">Sửa</a>
+                                            <a href="{% url 'delete_grade' register.id %}" class="btn btn-danger btn-sm" 
                                                onclick="return confirm('Bạn có chắc chắn muốn xóa không?');">Xóa</a>
                                             <a href="{% url 'add_grade' register.id %}" class="btn btn-warning btn-sm">Nhập điểm</a>
                                         </td>
