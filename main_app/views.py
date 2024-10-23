@@ -47,9 +47,29 @@ def user_logout(request):
 def home_view(request):
     total_students = Student.objects.count()  # Tổng số học sinh
     total_subjects = Subject.objects.count()  # Tổng số môn học
-    print(f"Register: {register}")  # Kiểm tra giá trị register
+    registers = Register.objects.all()
+
+    passing_count = 0
+    failing_count = 0
+    total_students = registers.count()
+
+    # Duyệt qua từng bản ghi của sinh viên trong từng học phần
+    for register in registers:
+        # Tính điểm trung bình của sinh viên
+        # Kiểm tra điều kiện đậu/rớt
+        if register.Average != None:
+            if register.Average >= 5:
+                passing_count += 1
+            else:
+                failing_count += 1
+
+    # Tính tỉ lệ phần trăm đậu/rớt
+    passing_rate = (passing_count / total_students) * 100 if total_students > 0 else 0
+    failing_rate = (failing_count / total_students) * 100 if total_students > 0 else 0
 
     context = {
+        'passing_rate': passing_rate,
+        'failing_rate': failing_rate,
         'total_students': total_students,
         'total_subjects': total_subjects,
         'page_title': 'Trang chủ',
@@ -763,6 +783,12 @@ def view_register(request):
     return render(request, 'hod_templates/view_register.html', context)
 
 def add_grade(request, register_id):
+    if not request.user.is_authenticated:
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
+    if request.user.user_type != '2':
+        messages.error(request, 'Bạn không có quyền truy cập!!!!!')
+        return redirect('home')
     user = request.user
     register = get_object_or_404(Register, id=register_id)
 

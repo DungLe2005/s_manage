@@ -123,6 +123,7 @@ class Register(models.Model):
         else:
             return self.homework_score * Decimal(0.1) + self.midterm_score * Decimal(0.4) + self.final_score * Decimal(0.5)
     
+    
 
 
         

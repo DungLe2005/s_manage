@@ -75,10 +75,52 @@
                     <h4>Tổng số môn học: {{ total_subjects }}</h4>
                 </div>
             </div>
+            <div class="card mb-4 draggable">
+                <div class="card-header pb-0 d-flex align-items-center">
+                    <div>
+                        <h6 class="mb-1">Tỉ lệ đậu và rớt môn</h6>
+                    </div>
+                    
+                </div>
+                <div class="card-body p-3">
+                    <h1 class="text-center ">Thống kê học phần</h1>
+                    <div class="chart">
+                        <canvas id="studentChart" class="chart-canvas" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+<script>
+    // Lấy dữ liệu từ Django thông qua biến context
+    var passingRate = {{ passing_rate|default:0 }};
+    var failingRate = {{ failing_rate|default:0 }};
 
+    // Kiểm tra xem biểu đồ có được khởi tạo đúng cách không
+    console.log('Passing Rate:', passingRate);
+    console.log('Failing Rate:', failingRate);
+
+    var ctx = document.getElementById("studentChart").getContext("2d");
+
+    new Chart(ctx, {
+        type: "pie",  // Sử dụng biểu đồ tròn
+        data: {
+            labels: ["Tỉ lệ đậu", "Tỉ lệ rớt"],
+            datasets: [{
+                data: [passingRate, failingRate],
+                backgroundColor: ["#00ab55", "#ff4560"],  // Màu sắc cho từng phần
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            legend: {
+                display: true,
+            },
+        },
+    });
+</script>
 {% comment %} <script>
     document.addEventListener('DOMContentLoaded', function() {
         const loadingDiv = document.getElementById('loading');
